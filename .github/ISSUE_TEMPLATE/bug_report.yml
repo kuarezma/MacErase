@@ -1,0 +1,39 @@
+name: Bug report
+description: Report unexpected behavior in MacErase.
+title: '[Bug]: '
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the problem and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open MacErase
+        2. ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: MacErase version
+      placeholder: e.g. 1.0 or a commit ID
+    validations:
+      required: true
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version and Mac model
+      placeholder: e.g. macOS 14.7, MacBook Air M1
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Screenshots or logs
+      description: Optional. Remove personal paths, credentials, and other private information before sharing.

@@ -1,0 +1,18 @@
+included:
+  - Sources
+  - Tests
+
+only_rules:
+  - trailing_whitespace
+  - trailing_newline
+  - vertical_whitespace
+  - colon
+  - comma
+  - opening_brace
+  - closing_brace
+  - line_length
+
+line_length:
+  warning: 140
+  ignores_comments: true
+  ignores_urls: true

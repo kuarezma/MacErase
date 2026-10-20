@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Build and test
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Show Swift version
+        run: swift --version
+      - name: Build release
+        run: swift build -c release
+      - name: Run unit tests
+        run: swift test
+
+  app:
+    name: Package app
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Build app
+        run: zsh Scripts/build_app.sh
+      - name: Archive app
+        run: ditto -c -k --sequesterRsrc --keepParent build/MacErase.app MacErase.zip
+      - name: Upload app
+        uses: actions/upload-artifact@v4
+        with:
+          name: MacErase
+          path: MacErase.zip
+          if-no-files-found: error
