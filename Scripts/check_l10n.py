@@ -8,6 +8,11 @@ import sys
 
 ROOT = Path(__file__).resolve().parent.parent
 TURKISH = re.compile(r"[çğıöşüÇĞİÖŞÜ]")
+# Türkçe karakter içermeyen ("Tara", "Geri Al") ama yerelleştirilen API'lere giden literal'ler de denetlenir.
+LOCALIZED_CALL = re.compile(r'(?:\b(?:Text|TextField|Button|Label|Toggle|Picker|ProgressView|Section|LabeledContent)\(|'
+                            r'\.(?:help|navigationTitle|confirmationDialog|accessibilityLabel)\(|'
+                            r'\bString\(localized:)\s*$')
+BRAND = {'MacErase'}
 
 
 def literals(source):
@@ -88,7 +93,7 @@ def literals(source):
 
 def placeholder(expression):
     """Bilinen sayısal ifadeler dışındakiler String olarak tahmin edilir."""
-    if re.search(r'\bInt(?:64)?\(|\.count\b|\.percent\b', expression):
+    if re.search(r'\bInt(?:64)?\(|\.count\b|\.percent\b|\.restored\b', expression):
         return '%lld', False
     if expression.strip() in {'failed', 'restored', 'locked'} or '$0 /' in expression or '$0 %' in expression:
         return '%lld', False
@@ -137,7 +142,9 @@ def main():
     for path in sorted((ROOT / 'Sources').rglob('*.swift')):
         source = path.read_text()
         for start, _, body, expressions in literals(source):
-            if not TURKISH.search(body):
+            in_call = LOCALIZED_CALL.search(source[max(0, start - 64):start])
+            letters = re.search(r'[A-Za-z]', body.replace('\x00', ''))
+            if not TURKISH.search(body) and not (in_call and letters and body not in BRAND):
                 continue
             key, uncertain = key_for(body, expressions)
             location = f'{path.relative_to(ROOT)}:{source.count(chr(10), 0, start) + 1}'
@@ -149,9 +156,12 @@ def main():
                 # Belirsiz türde yanlış eksik bildirmemek için iki biçimi de dene.
                 candidates = [parts[0] + ''.join(t + p for t, p in zip(tokens, parts[1:]))
                               for tokens in itertools.product(('%lld', '%@'), repeat=len(expressions))]
+            checked.update(c for c in candidates if c in catalogs['tr'])
             for lang, catalog in catalogs.items():
                 if not any(candidate in catalog for candidate in candidates):
                     errors.append(f'EKSİK [{lang}]: {location}: {key}')
+    for key in sorted(set(catalogs['tr']) - checked):
+        warnings.append(f'uyarı: kodda kullanılmayan anahtar: {key}')
     for lang, catalog in catalogs.items():
         for key, value in catalog.items():
             if lang == 'tr' and key != value:
@@ -160,7 +170,7 @@ def main():
                 errors.append(f'Diller arasında eksik anahtar [{lang}]: {key}')
     for line in warnings + errors:
         print(line)
-    print(f'check_l10n: {len(checked)} Türkçe karakterli anahtar denetlendi; '
+    print(f'check_l10n: {len(checked)} anahtar denetlendi; '
           f'tr={len(catalogs["tr"])}, en={len(catalogs["en"])}; '
           f'{len(errors)} hata, {len(warnings)} uyarı.')
     return 1 if errors else 0

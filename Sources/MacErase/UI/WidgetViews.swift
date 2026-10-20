@@ -16,6 +16,7 @@ struct WidgetsBar: View {
             }
             .buttonStyle(.borderless)
             .help("Widget'ları düzenle")
+            .accessibilityLabel(Text("Widget'ları düzenle"))
             .popover(isPresented: $showPicker, arrowEdge: .bottom) {
                 WidgetPicker().frame(width: 280).padding(14)
             }
@@ -29,17 +30,21 @@ struct WidgetPill: View {
 
     var body: some View {
         HStack(spacing: 6) {
-            if let fraction {
-                RingGauge(fraction: fraction, tint: tint, lineWidth: 2.5).frame(width: 14, height: 14)
-            } else {
-                Image(systemName: kind.symbol).font(.system(size: 11, weight: .semibold)).foregroundStyle(tint)
+            Group {
+                if let fraction {
+                    RingGauge(fraction: fraction, tint: tint, lineWidth: 2.5).frame(width: 14, height: 14)
+                } else {
+                    Image(systemName: kind.symbol).font(.system(size: 11, weight: .semibold)).foregroundStyle(tint)
+                }
             }
+            .accessibilityHidden(true)
             content
         }
         .font(.system(size: 12, weight: .medium).monospacedDigit())
         .padding(.horizontal, 9).padding(.vertical, 4)
         .background(tint.opacity(0.12), in: Capsule())
         .help(help)
+        .accessibilityElement(children: .combine)
     }
 
     @ViewBuilder private var content: some View {
@@ -47,9 +52,9 @@ struct WidgetPill: View {
         case .clock:
             TimelineView(.everyMinute) { ctx in Text(ctx.date, format: .dateTime.hour().minute()) }
         case .network:
-            Text("↓\(Fmt.rate(monitor.netDown))  ↑\(Fmt.rate(monitor.netUp))")
+            Text(verbatim: "↓\(Fmt.rate(monitor.netDown))  ↑\(Fmt.rate(monitor.netUp))").accessibilityLabel(help)
         default:
-            Text(valueText).contentTransition(.numericText())
+            Text(valueText).contentTransition(.numericText()).accessibilityLabel(help)
         }
     }
 

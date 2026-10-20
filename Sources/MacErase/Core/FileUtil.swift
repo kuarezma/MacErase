@@ -112,13 +112,22 @@ enum FileUtil {
         return (done, failed)
     }
 
+    /// Only an app bundle in /Applications or an item *inside* a /Library subfolder may go through `rm -rf` as root;
+    /// a top-level folder such as /Library/LaunchDaemons or /Applications itself never qualifies.
+    static func isAdminRemovable(_ path: String) -> Bool {
+        let parts = path.split(separator: "/", omittingEmptySubsequences: false)
+        guard path.hasPrefix("/"), !parts.contains(".."), !parts.contains("."), !path.hasSuffix("/"),
+              !parts.dropFirst().contains(""), !path.contains("\n") else { return false }
+        let url = URL(fileURLWithPath: path)
+        if isRedirected(url.deletingLastPathComponent()) { return false }
+        if parts[1] == "Applications" { return url.pathExtension == "app" && parts.count >= 3 }
+        return parts[1] == "Library" && parts.count >= 4
+    }
+
     /// Permanently removes (not Trash) root-owned paths under /Library or /Applications after the user authenticates through the system prompt.
     @MainActor
     static func adminRemove(_ paths: [String]) -> Set<String> {
-        let safe = paths.filter {
-            ($0.hasPrefix("/Library/") || $0.hasPrefix("/Applications/")) && !$0.contains("..")
-                && !isRedirected(URL(fileURLWithPath: $0).deletingLastPathComponent())
-        }
+        let safe = paths.filter(isAdminRemovable)
         guard !safe.isEmpty else { return [] }
         let shell = "rm -rf " + safe.map { "'" + $0.replacingOccurrences(of: "'", with: "'\\''") + "'" }.joined(separator: " ")
         let escaped = shell.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"")

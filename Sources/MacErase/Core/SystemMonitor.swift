@@ -73,9 +73,10 @@ final class SystemMonitor {
     private func sample() {
         sampleCPU()
         sampleMemory()
-        
         sampleNetwork()
-        battery = Self.readBattery()
+        // Assign only on change: every write to an observed property re-renders the widgets that read it.
+        let newBattery = Self.readBattery()
+        if newBattery != battery { battery = newBattery }
         if Date().timeIntervalSince(lastDiskCheck) > 30 { sampleDisk() }
         if lastTicks != nil, diskTotal > 0, !hasSample { hasSample = true }
     }
@@ -122,8 +123,9 @@ final class SystemMonitor {
         lastDiskCheck = Date()
         let keys: Set<URLResourceKey> = [.volumeAvailableCapacityForImportantUsageKey, .volumeTotalCapacityKey]
         guard let v = try? URL(fileURLWithPath: "/").resourceValues(forKeys: keys) else { return }
-        diskFree = v.volumeAvailableCapacityForImportantUsage ?? 0
-        diskTotal = Int64(v.volumeTotalCapacity ?? 0)
+        let free = v.volumeAvailableCapacityForImportantUsage ?? 0, total = Int64(v.volumeTotalCapacity ?? 0)
+        if free != diskFree { diskFree = free }
+        if total != diskTotal { diskTotal = total }
     }
 
     private func sampleNetwork() {
@@ -146,8 +148,10 @@ final class SystemMonitor {
         guard let prev = lastNet else { return }
         let dt = now.timeIntervalSince(prev.at)
         guard dt > 0 else { return }
-        netDown = down >= prev.down ? Double(down - prev.down) / dt : 0
-        netUp = up >= prev.up ? Double(up - prev.up) / dt : 0
+        let newDown = down >= prev.down ? Double(down - prev.down) / dt : 0
+        let newUp = up >= prev.up ? Double(up - prev.up) / dt : 0
+        if newDown != netDown { netDown = newDown }
+        if newUp != netUp { netUp = newUp }
     }
 
     private static func readBattery() -> BatteryInfo? {

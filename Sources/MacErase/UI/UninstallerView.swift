@@ -22,11 +22,12 @@ struct UninstallerView: View {
                 Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
                 TextField("Uygulama ara", text: $model.query).textFieldStyle(.plain).focused($searchFocused)
                 Button { searchFocused = true } label: { EmptyView() }
-                    .keyboardShortcut("f", modifiers: .command).frame(width: 0, height: 0).opacity(0)
+                    .keyboardShortcut("f", modifiers: .command).frame(width: 0, height: 0).opacity(0).accessibilityHidden(true)
                 Button { model.reload() } label: { Image(systemName: "arrow.clockwise") }
                     .buttonStyle(.borderless).keyboardShortcut("r", modifiers: .command)
-                    .help("Listeyi yenile (⌘R)").disabled(model.loading)
-                Picker("", selection: $model.sort) {
+                    .help("Listeyi yenile (⌘R)").accessibilityLabel(Text("Listeyi yenile (⌘R)"))
+                    .disabled(model.loading || model.working)
+                Picker("Sıralama", selection: $model.sort) {
                     ForEach(AppSort.allCases) { Text($0.title).tag($0) }
                 }
                 .pickerStyle(.segmented).labelsHidden().frame(width: 100)
@@ -64,9 +65,11 @@ struct UninstallerView: View {
             }
         } else if let message = model.message {
             VStack(spacing: 14) {
-                EmptyState(symbol: "checkmark.circle.fill", title: String(localized: "Tamamlandı"), detail: message)
+                EmptyState(symbol: model.messageIsError ? "exclamationmark.triangle.fill" : "checkmark.circle.fill",
+                           title: model.messageIsError ? String(localized: "İşlem tamamlanamadı") : String(localized: "Tamamlandı"),
+                           detail: message)
                 if model.canUndo {
-                    Button("Geri Al") { model.undo() }.buttonStyle(PrimaryButtonStyle())
+                    Button("Geri Al") { model.undo() }.buttonStyle(PrimaryButtonStyle()).disabled(model.working)
                 }
             }.frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
@@ -128,7 +131,7 @@ struct UninstallerView: View {
                 HStack(spacing: 8) {
                     Text(model.message ?? String(localized: "Öğeler çöp kutusuna taşınır, geri alabilirsin."))
                         .font(.caption).foregroundStyle(.secondary)
-                    if model.canUndo { Button("Geri Al") { model.undo() }.buttonStyle(.link).font(.caption) }
+                    if model.canUndo { Button("Geri Al") { model.undo() }.buttonStyle(.link).font(.caption).disabled(model.working) }
                 }
             }
             Spacer()

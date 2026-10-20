@@ -8,15 +8,16 @@ struct LargeFilesView: View {
         VStack(spacing: 0) {
             HStack {
                 Picker("Minimum boyut", selection: $model.minMB) {
-                    Text("50 MB").tag(50); Text("100 MB").tag(100); Text("500 MB").tag(500); Text("1 GB").tag(1000)
+                    Text(verbatim: "50 MB").tag(50); Text(verbatim: "100 MB").tag(100)
+                    Text(verbatim: "500 MB").tag(500); Text(verbatim: "1 GB").tag(1000)
                 }
                 .frame(width: 220)
                 Button(model.scanning ? String(localized: "Taranıyor…") : String(localized: "Tara")) { model.scan() }
                     .keyboardShortcut("r", modifiers: .command)
                     .buttonStyle(PrimaryButtonStyle()).disabled(model.scanning)
                 Spacer()
-                Text("Ev klasörü içindeki Belgeler, İndirilenler, Masaüstü, Filmler vb.")
-                    .font(.caption).foregroundStyle(.secondary)
+                Text("Belgeler, İndirilenler, Masaüstü, Filmler vb. taranır; git projeleri ve node_modules gibi klasörler atlanır.")
+                    .font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.trailing).lineLimit(2)
             }
             .padding(14)
             Divider()

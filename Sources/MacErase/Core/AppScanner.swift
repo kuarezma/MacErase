@@ -51,9 +51,16 @@ struct Leftover: Identifiable, Hashable {
 enum AppScanner {
     private static let ownBundleID = "local.macerase.app"
 
-    /// Reads an .app bundle. Returns nil for non-bundles and for MacErase itself.
+    /// Apps that ship with macOS (e.g. /Applications/Safari.app links into a system cryptex) cannot be
+    /// removed, but their data folders could still be trashed, so they are never offered.
+    static func isSystemApp(_ url: URL) -> Bool {
+        let real = url.resolvingSymlinksInPath().path
+        return real.hasPrefix("/System/") || real.contains("/Cryptexes/")
+    }
+
+    /// Reads an .app bundle. Returns nil for non-bundles, macOS system apps and MacErase itself.
     static func app(at url: URL) -> InstalledApp? {
-        guard url.pathExtension == "app", let bundle = Bundle(url: url) else { return nil }
+        guard url.pathExtension == "app", !isSystemApp(url), let bundle = Bundle(url: url) else { return nil }
         let id = bundle.bundleIdentifier ?? ""
         if id == ownBundleID { return nil }
         let info = bundle.infoDictionary ?? [:]

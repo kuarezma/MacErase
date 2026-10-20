@@ -4,6 +4,7 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(AppSettings.self) private var settings
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
+    private static let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "–"
 
     var body: some View {
         @Bindable var settings = settings
@@ -41,7 +42,7 @@ struct SettingsView: View {
             }
 
             Section("Hakkında") {
-                LabeledContent("MacErase", value: "1.0")
+                LabeledContent("MacErase", value: Self.version)
             }
         }
         .formStyle(.grouped)

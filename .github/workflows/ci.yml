@@ -18,6 +18,8 @@ jobs:
           persist-credentials: false
       - name: Show Swift version
         run: swift --version
+      - name: Check localization
+        run: python3 Scripts/check_l10n.py
       - name: Build release
         run: swift build -c release
       - name: Run unit tests

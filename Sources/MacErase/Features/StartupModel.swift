@@ -25,6 +25,8 @@ final class StartupModel: ObservableObject {
     }
 
     func remove(_ item: StartupItem) {
+        // System-wide agents/daemons belong to root; only the user's own plists may be unloaded and trashed.
+        guard item.removable, item.url.pathExtension == "plist" else { return }
         Task { [weak self] in
             // Best effort: stop the job first so it does not respawn until next login.
             let path = item.url.path

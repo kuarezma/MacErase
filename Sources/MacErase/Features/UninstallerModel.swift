@@ -23,6 +23,8 @@ final class UninstallerModel: ObservableObject {
     @Published var scanningLeftovers = false
     @Published var working = false
     @Published var message: String?
+    /// The detail pane shows `message` as a warning instead of a "Done" screen when this is set.
+    @Published var messageIsError = false
     @Published var query = ""
     @Published var sort: AppSort = .name
 
@@ -49,13 +51,16 @@ final class UninstallerModel: ObservableObject {
         sizeTask?.cancel()
         sizeTask = Task { [weak self] in
             let found = await Task.detached(priority: .userInitiated) { AppScanner.installedApps() }.value
-            guard let self else { return }
+            guard let self, !Task.isCancelled else { return }
             self.apps = found
             self.loading = false
             // One batched publish at the end keeps the list from re-rendering once per app.
             if let name = ProcessInfo.processInfo.environment["MACERASE_SELECT"],
                let app = found.first(where: { $0.name == name }) { self.select(app) }  // screenshot/debug hook
-            self.sizes = await FileUtil.sizes(of: found.map(\.url))
+            let measured = await FileUtil.sizes(of: found.map(\.url))
+            // A cancelled (superseded) scan returns partial sizes; never publish them.
+            guard !Task.isCancelled else { return }
+            self.sizes = measured
         }
     }
 
@@ -67,11 +72,16 @@ final class UninstallerModel: ObservableObject {
 
     /// Opens an .app that was dropped on the window, even if it lives outside /Applications.
     func open(url: URL) {
-        guard let app = AppScanner.app(at: url) else { message = String(localized: "Bu bir uygulama değil."); return }
+        if url.pathExtension == "app", AppScanner.isSystemApp(url) {
+            report(String(localized: "macOS ile gelen uygulamalar kaldırılamaz."), isError: true)
+            return
+        }
+        guard !working else { return }
+        guard let app = AppScanner.app(at: url) else { report(String(localized: "Bu bir uygulama değil."), isError: true); return }
         // A dropped bundle that claims the id of a different installed app could make us touch that app's data.
         if !app.bundleID.isEmpty,
            let clash = apps.first(where: { $0.bundleID == app.bundleID && $0.url.resolvingSymlinksInPath() != app.url.resolvingSymlinksInPath() }) {
-            message = String(localized: "Aynı kimliğe sahip başka bir uygulama zaten kurulu: \(clash.name). Önce onu seç.")
+            report(String(localized: "Aynı kimliğe sahip başka bir uygulama zaten kurulu: \(clash.name). Önce onu seç."), isError: true)
             return
         }
         if !apps.contains(where: { $0.url == app.url }) {
@@ -82,21 +92,32 @@ final class UninstallerModel: ObservableObject {
     }
 
     func undo() {
+        guard !working else { return }
         let result = FileUtil.restore(lastMoves)
         lastMoves = result.remaining
         canUndo = !result.remaining.isEmpty
         reload()
-        message = result.remaining.isEmpty
-            ? String(localized: "\(result.restored) öğe geri konuldu.")
-            : String(localized: "\(result.restored) öğe geri konuldu, \(result.remaining.count) öğe geri konamadı (aynı ad var ya da klasör değişti).")
+        report(result.remaining.isEmpty
+               ? String(localized: "\(result.restored) öğe geri konuldu.")
+               : String(localized: "\(result.restored) öğe geri konuldu, \(result.remaining.count) öğe geri konamadı (aynı ad var ya da klasör değişti)."),
+               isError: !result.remaining.isEmpty)
+    }
+
+    private func report(_ text: String, isError: Bool = false) {
+        message = text
+        messageIsError = isError
     }
 
     func select(_ app: InstalledApp?) {
+        // Switching apps mid-uninstall would mix the running job's results into another app's list.
+        guard !working else { return }
         leftoverTask?.cancel()
         selected = app
         leftovers = []
         checked = []
         message = nil
+        messageIsError = false
+        scanningLeftovers = false
         guard let app else { return }
         scanningLeftovers = true
         let ids = apps.map(\.bundleID)
@@ -128,7 +149,8 @@ final class UninstallerModel: ObservableObject {
             guard let self else { return }
             guard await Self.quit(app) else {
                 self.working = false
-                self.message = String(localized: "\(app.name) kapanmadı. Kaydedilmemiş verin olabilir; önce uygulamayı kendin kapatıp tekrar dene.")
+                self.report(String(localized: "\(app.name) kapanmadı. Kaydedilmemiş verin olabilir; önce uygulamayı kendin kapatıp tekrar dene."),
+                            isError: true)
                 return
             }
             let userItems = chosen.filter { !$0.needsAdmin }
@@ -151,6 +173,7 @@ final class UninstallerModel: ObservableObject {
                 self.checked.subtract(chosen.filter { doneURLs.contains($0.url.path) }.map(\.url))
             }
             let permanent = adminDone.isEmpty ? "" : String(localized: " Yönetici öğeleri (\(adminDone.count)) kalıcı silindi.")
+            self.messageIsError = false
             self.message = failed == 0
                 ? String(localized: "\(app.name) kaldırıldı. \(Fmt.bytes(freed)) boşaldı.") + (adminDone.isEmpty ? String(localized: " Çöp kutusundan geri alınabilir.") : permanent)
                 : String(localized: "\(doneURLs.count) öğe kaldırıldı, \(failed) öğe kaldırılamadı (izin gerekebilir).")
@@ -160,7 +183,8 @@ final class UninstallerModel: ObservableObject {
     /// Asks the app to quit and waits. Never force-kills: that could discard unsaved work.
     private static func quit(_ app: InstalledApp) async -> Bool {
         let running = NSWorkspace.shared.runningApplications.filter {
-            $0.bundleURL == app.url || (!app.bundleID.isEmpty && $0.bundleIdentifier == app.bundleID)
+            $0.bundleURL?.standardizedFileURL.path == app.url.standardizedFileURL.path
+                || (!app.bundleID.isEmpty && $0.bundleIdentifier == app.bundleID)
         }
         guard !running.isEmpty else { return true }
         running.forEach { $0.terminate() }

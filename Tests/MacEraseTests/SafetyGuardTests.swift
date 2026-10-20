@@ -64,4 +64,35 @@ struct SafetyGuardTests {
             #expect(!fm.fileExists(atPath: elsewhere.appendingPathComponent("a.txt").path))
         }
     }
+
+    // Pure path checks only: nothing is passed to the real adminRemove.
+    @Test func adminRemoveAcceptsOnlyAppBundlesAndItemsInsideLibraryFolders() {
+        #expect(FileUtil.isAdminRemovable("/Applications/Foo.app"))
+        #expect(FileUtil.isAdminRemovable("/Applications/Utilities/Foo.app"))
+        #expect(FileUtil.isAdminRemovable("/Library/LaunchDaemons/com.foo.helper.plist"))
+        #expect(FileUtil.isAdminRemovable("/Library/Application Support/Foo"))
+    }
+
+    @Test func adminRemoveRejectsTopLevelFoldersTraversalAndOtherLocations() {
+        for path in ["/Applications", "/Applications/", "/Applications/notes.txt", "/Library", "/Library/LaunchDaemons",
+                     "/Library/Application Support/", "/Library/Caches/../../etc", "/Library/Caches/./x",
+                     "/Library//Caches/x", "/Users/me/Library/Caches/x", "/System/Library/Caches/x",
+                     "Library/Caches/x", "/Library/Caches/a\nb", ""] {
+            #expect(!FileUtil.isAdminRemovable(path), "should reject \(path)")
+        }
+    }
+
+    // Read-only: only resolves paths of apps that ship with macOS, never modifies them.
+    @Test func systemAppsAreNeverOfferedEvenThroughASymlink() throws {
+        let calculator = URL(fileURLWithPath: "/System/Applications/Calculator.app")
+        #expect(AppScanner.isSystemApp(calculator))
+        #expect(AppScanner.app(at: calculator) == nil)
+        try sandbox { root in
+            let link = root.appendingPathComponent("Calculator.app")
+            try FileManager.default.createSymbolicLink(at: link, withDestinationURL: calculator)
+            #expect(AppScanner.isSystemApp(link))
+            #expect(AppScanner.app(at: link) == nil)
+            #expect(!AppScanner.isSystemApp(root.appendingPathComponent("Other.app")))
+        }
+    }
 }

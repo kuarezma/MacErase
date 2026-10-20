@@ -18,8 +18,9 @@ cat > "$APP/Contents/Info.plist" <<PL
 <plist version="1.0"><dict>
 <key>CFBundleName</key><string>MacErase</string>
 <key>CFBundleDisplayName</key><string>MacErase</string>
-<key>CFBundleDevelopmentRegion</key><string>tr</string>
-<key>CFBundleLocalizations</key><array><string>tr</string><string>en</string></array>
+<key>CFBundleDevelopmentRegion</key><string>en</string>
+<key>CFBundleLocalizations</key><array><string>en</string><string>tr</string></array>
+<key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
 <key>CFBundleIdentifier</key><string>local.macerase.app</string>
 <key>CFBundleExecutable</key><string>MacErase</string>
 <key>CFBundleIconFile</key><string>AppIcon</string>
@@ -29,6 +30,7 @@ cat > "$APP/Contents/Info.plist" <<PL
 <key>LSMinimumSystemVersion</key><string>14.0</string>
 <key>LSApplicationCategoryType</key><string>public.app-category.utilities</string>
 <key>NSHighResolutionCapable</key><true/>
+<key>NSHumanReadableCopyright</key><string>© 2026 MacErase contributors. MIT License.</string>
 </dict></plist>
 PL
 codesign --force --deep -s - "$APP"

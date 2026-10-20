@@ -32,7 +32,7 @@ struct MacEraseApp: App {
                 .environment(monitor)
         } label: {
             Image(systemName: "bolt.shield.fill")
-            if settings.menuBarShowsCPU { Text("\(Int(monitor.cpu))%") }
+            if settings.menuBarShowsCPU { Text(verbatim: "\(Int(monitor.cpu))%") }
         }
         .menuBarExtraStyle(.window)
 
@@ -49,7 +49,7 @@ private struct MenuBarPanel: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("MacErase").font(.headline)
+            Text(verbatim: "MacErase").font(.headline)
             ForEach(WidgetKind.allCases.filter { $0 != .clock }) { kind in
                 WidgetPill(kind: kind)
             }

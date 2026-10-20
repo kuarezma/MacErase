@@ -40,8 +40,9 @@ enum CleanKind: String, CaseIterable, Identifiable {
     /// Only regenerable caches are on by default; anything personal or expensive to rebuild is opt-in.
     var defaultOn: Bool { self == .caches || self == .logs || self == .xcode }
 
-    var roots: [URL] {
-        let home = FileUtil.home, lib = FileUtil.library
+    /// `home` is injectable so tests can point every root at a throwaway folder.
+    func roots(home: URL = FileUtil.home) -> [URL] {
+        let lib = home.appendingPathComponent("Library")
         switch self {
         case .caches: return [lib.appendingPathComponent("Caches")]
         case .logs: return [lib.appendingPathComponent("Logs")]
@@ -57,7 +58,8 @@ enum CleanKind: String, CaseIterable, Identifiable {
     }
 
     /// Items in the categories whose root *is* the cache (npm, gradle) are cleaned as a whole.
-    func candidates() -> [URL] {
+    func candidates(home: URL = FileUtil.home) -> [URL] {
+        let roots = roots(home: home)
         switch self {
         case .devTools:
             let fm = FileManager.default
@@ -122,18 +124,21 @@ final class CleanerModel: ObservableObject {
                 let items = urls.map { CleanItem(url: $0, size: sizes[$0] ?? 0) }
                     .filter { $0.size > 0 }
                     .sorted { $0.size > $1.size }
-                guard let self else { return }
+                // A superseded scan has partial sizes; appending them would duplicate categories in the new scan.
+                guard let self, !Task.isCancelled else { return }
                 if kind == .trash, items.isEmpty,
                    (try? FileManager.default.contentsOfDirectory(atPath: FileUtil.home.appendingPathComponent(".Trash").path)) == nil {
                     self.trashNeedsAccess = true
                 }
                 self.categories.append(CleanCategory(kind: kind, items: items, enabled: kind.defaultOn && !items.isEmpty))
             }
+            guard !Task.isCancelled else { return }
             self?.phase = .ready
         }
     }
 
     func clean() {
+        guard phase == .ready else { return }
         let targets = categories.filter(\.enabled).flatMap { $0.items.filter { !excluded.contains($0.url) } }
         guard !targets.isEmpty else { return }
         phase = .cleaning

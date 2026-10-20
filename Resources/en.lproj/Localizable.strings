@@ -51,7 +51,6 @@
 "Diskin %%%lld dolu" = "Your disk is %lld%% full";
 "Dosya çöp kutusuna taşınır, geri alabilirsin." = "The file will be moved to the Trash. You can restore it.";
 "Eski günlük ve tanılama kayıtları" = "Old log and diagnostic files";
-"Ev klasörü içindeki Belgeler, İndirilenler, Masaüstü, Filmler vb." = "Documents, Downloads, Desktop, Movies, and other folders in your home folder";
 "Finder" = "Finder";
 "Finder'da Göster" = "Show in Finder";
 "Geliştirici Önbellekleri" = "Developer Caches";
@@ -141,4 +140,10 @@
 "Şarj oluyor" = "Charging";
 "Şarjlı" = "Charged";
 "Aynı kimliğe sahip başka bir uygulama zaten kurulu: %@. Önce onu seç." = "Another app with the same identifier is already installed: %@. Select that one first.";
-"%lld öğe geri konuldu, %lld öğe geri konamadı (aynı ad var ya da klasör değişti)." = "Restored %lld item(s); %lld could not be restored (name already exists or folder changed).";
+"%lld öğe geri konuldu, %lld öğe geri konamadı (aynı ad var ya da klasör değişti)." = "Restored: %lld. Could not restore: %lld (an item with the same name exists or the folder changed).";
+"macOS ile gelen uygulamalar kaldırılamaz." = "Applications that come with macOS cannot be removed.";
+"İşlem tamamlanamadı" = "Could Not Complete";
+"Sıralama" = "Sort By";
+"Belgeler, İndirilenler, Masaüstü, Filmler vb. taranır; git projeleri ve node_modules gibi klasörler atlanır." = "Scans Documents, Downloads, Desktop, Movies, and more. Git projects and folders such as node_modules are skipped.";
+"ve %lld öğe daha" = "and %lld more";
+"Çıkar" = "Remove";

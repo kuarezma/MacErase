@@ -51,7 +51,6 @@
 "Diskin %%%lld dolu" = "Diskin %%%lld dolu";
 "Dosya çöp kutusuna taşınır, geri alabilirsin." = "Dosya çöp kutusuna taşınır, geri alabilirsin.";
 "Eski günlük ve tanılama kayıtları" = "Eski günlük ve tanılama kayıtları";
-"Ev klasörü içindeki Belgeler, İndirilenler, Masaüstü, Filmler vb." = "Ev klasörü içindeki Belgeler, İndirilenler, Masaüstü, Filmler vb.";
 "Finder" = "Finder";
 "Finder'da Göster" = "Finder'da Göster";
 "Geliştirici Önbellekleri" = "Geliştirici Önbellekleri";
@@ -142,3 +141,9 @@
 "Şarjlı" = "Şarjlı";
 "Aynı kimliğe sahip başka bir uygulama zaten kurulu: %@. Önce onu seç." = "Aynı kimliğe sahip başka bir uygulama zaten kurulu: %@. Önce onu seç.";
 "%lld öğe geri konuldu, %lld öğe geri konamadı (aynı ad var ya da klasör değişti)." = "%lld öğe geri konuldu, %lld öğe geri konamadı (aynı ad var ya da klasör değişti).";
+"macOS ile gelen uygulamalar kaldırılamaz." = "macOS ile gelen uygulamalar kaldırılamaz.";
+"İşlem tamamlanamadı" = "İşlem tamamlanamadı";
+"Sıralama" = "Sıralama";
+"Belgeler, İndirilenler, Masaüstü, Filmler vb. taranır; git projeleri ve node_modules gibi klasörler atlanır." = "Belgeler, İndirilenler, Masaüstü, Filmler vb. taranır; git projeleri ve node_modules gibi klasörler atlanır.";
+"ve %lld öğe daha" = "ve %lld öğe daha";
+"Çıkar" = "Çıkar";

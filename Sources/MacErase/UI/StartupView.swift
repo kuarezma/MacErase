@@ -25,8 +25,10 @@ struct StartupView: View {
                         Text(item.isDaemon ? String(localized: "Sistem servisi") : item.isSystemWide ? String(localized: "Tüm kullanıcılar") : String(localized: "Kullanıcı"))
                             .font(.caption).foregroundStyle(.secondary)
                         Button("Finder") { FileUtil.reveal(item.url) }.buttonStyle(.borderless)
-                        Button("Kaldır") { pending = item }
-                            .buttonStyle(.borderless).foregroundStyle(.red).disabled(!item.removable)
+                        Button("Çıkar") { pending = item }
+                            .buttonStyle(.borderless).disabled(!item.removable)
+                            // A fixed red would hide the disabled state of system items.
+                            .foregroundStyle(item.removable ? Color.red : Color.secondary)
                             .help(item.removable ? String(localized: "Başlangıçtan kaldır (çöpe taşır)") : String(localized: "Sistem öğeleri buradan kaldırılamaz"))
                     }
                 }
@@ -37,7 +39,8 @@ struct StartupView: View {
             }
         }
         .navigationTitle("Başlangıç Öğeleri")
-        .onAppear { if !model.loaded { model.load() } }
+        // Reload on every visit: an uninstall elsewhere may have removed agents since the last look.
+        .onAppear { model.load() }
         .confirmationDialog("\(pending?.label ?? "") başlangıçtan kaldırılsın mı?", isPresented: Binding(get: { pending != nil }, set: { if !$0 { pending = nil } }),
                             titleVisibility: .visible) {
             Button("Çöpe Taşı", role: .destructive) { if let item = pending { model.remove(item) }; pending = nil }

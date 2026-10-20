@@ -5,6 +5,7 @@ struct CleanerView: View {
     @ObservedObject var model: CleanerModel
     @State private var confirm = false
     @State private var expanded: Set<CleanKind> = []
+    private static let maxRows = 300
 
     var body: some View {
         VStack(spacing: 0) {
@@ -70,7 +71,7 @@ struct CleanerView: View {
         let kind = category.kind
         return VStack(spacing: 0) {
             HStack(spacing: 12) {
-                Toggle("", isOn: Binding(get: { category.enabled }, set: { model.toggle(kind, on: $0) }))
+                Toggle(kind.title, isOn: Binding(get: { category.enabled }, set: { model.toggle(kind, on: $0) }))
                     .labelsHidden().disabled(category.items.isEmpty)
                 Image(systemName: kind.symbol).font(.title3).foregroundStyle(.brand).frame(width: 28)
                 VStack(alignment: .leading, spacing: 2) {
@@ -99,7 +100,8 @@ struct CleanerView: View {
             }
             if expanded.contains(kind) {
                 Divider().padding(.vertical, 8)
-                ForEach(category.items) { item in
+                // Thousands of rows (a full Trash) in a non-lazy card would stall the UI; the rest stay selected.
+                ForEach(category.items.prefix(Self.maxRows)) { item in
                     HStack {
                         Toggle(item.url.lastPathComponent, isOn: Binding(get: { !model.excluded.contains(item.url) },
                                                                          set: { _ in model.toggleItem(item.url) }))
@@ -113,6 +115,10 @@ struct CleanerView: View {
                         Text(Fmt.bytes(item.size)).font(.callout.monospacedDigit()).foregroundStyle(.secondary)
                     }
                     .contextMenu { Button("Finder'da Göster") { FileUtil.reveal(item.url) } }
+                }
+                if category.items.count > Self.maxRows {
+                    Text("ve \(category.items.count - Self.maxRows) öğe daha")
+                        .font(.caption).foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .leading).padding(.top, 4)
                 }
             }
         }
